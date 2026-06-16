@@ -13,6 +13,7 @@ setTimeout(async () => {
     
     const admin = await User.findOne({ email: adminEmail, role: 'admin' });
     if (admin) {
+      admin.name = 'Ranjith';
       admin.password = adminPassword; // Triggers the pre-save password hashing hook
       await admin.save();
       console.log(`[Database] Admin password successfully synchronized for: ${adminEmail}`);
