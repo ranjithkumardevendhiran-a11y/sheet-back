@@ -1,7 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import { authenticate, attachUser } from '../middleware/auth.js';
+import { authenticate, attachUser, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -41,7 +41,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/register-user', async (req, res) => {
+router.post('/register-user', authenticate, requireRole('admin'), async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
