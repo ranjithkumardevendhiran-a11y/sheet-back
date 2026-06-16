@@ -105,7 +105,7 @@ router.post(
 
       const title = req.body.title?.trim() || req.file.originalname;
       const tab = req.body.tab?.trim() || 'General';
-      const { headers, rows } = parseWorkbookBuffer(req.file.buffer);
+      const { headers, headerStyles, rows, rowStyles } = parseWorkbookBuffer(req.file.buffer);
       const keywords = buildSheetKeywords(title, tab, headers, rows);
 
       const sheet = await Sheet.create({
@@ -113,7 +113,9 @@ router.post(
         tab,
         sourceType: 'upload',
         headers,
+        headerStyles,
         rows,
+        rowStyles,
         keywords,
         uploadedBy: req.user.id,
       });
