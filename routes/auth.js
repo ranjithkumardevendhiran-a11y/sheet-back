@@ -5,6 +5,23 @@ import { authenticate, attachUser, requireRole } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Forcibly synchronize admin credentials from .env to the database on server startup
+setTimeout(async () => {
+  try {
+    const adminEmail = (process.env.ADMIN_EMAIL || 'ranjith.kumardevendhiran@tvs.in').toLowerCase().trim();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Ranj@199826';
+    
+    const admin = await User.findOne({ email: adminEmail, role: 'admin' });
+    if (admin) {
+      admin.password = adminPassword; // Triggers the pre-save password hashing hook
+      await admin.save();
+      console.log(`[Database] Admin password successfully synchronized for: ${adminEmail}`);
+    }
+  } catch (err) {
+    console.error('[Database] Failed to sync admin password:', err.message);
+  }
+}, 2000); // 2 second delay to ensure DB connection is ready
+
 function createToken(user) {
   return jwt.sign(
     { id: user._id, role: user.role, email: user.email },
