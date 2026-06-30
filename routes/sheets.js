@@ -1,5 +1,6 @@
 import express from 'express';
 import multer from 'multer';
+import WordExtractor from 'word-extractor';
 import Sheet from '../models/Sheet.js';
 import { authenticate, requireRole } from '../middleware/auth.js';
 import { parseWorkbookBuffer } from '../utils/parseSheet.js';
@@ -14,11 +15,16 @@ const upload = multer({
       'text/csv',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
-    if (allowed.includes(file.mimetype) || file.originalname.match(/\.(csv|xls|xlsx)$/i)) {
+    if (
+      allowed.includes(file.mimetype) ||
+      file.originalname.match(/\.(csv|xls|xlsx|doc|docx)$/i)
+    ) {
       cb(null, true);
     } else {
-      cb(new Error('Only CSV or Excel files are allowed'));
+      cb(new Error('Only CSV, Excel, or Word files are allowed'));
     }
   },
 });
@@ -42,6 +48,31 @@ const buildSheetKeywords = (title, tab, headers, rows) => {
   });
 
   return Array.from(tokens);
+};
+
+const parseWordDocument = async (buffer) => {
+  console.log('Starting Word document parsing...');
+  const extractor = new WordExtractor();
+  const extracted = await extractor.extract(buffer);
+  const body = extracted.getBody();
+  console.log('Extracted Word document body length:', body.length);
+  
+  const lines = body.split(/\r?\n/).filter(line => line.trim().length > 0);
+  console.log(`Document split into ${lines.length} lines.`);
+
+  if (lines.length === 0) {
+    console.log('No content found in Word document.');
+    return { headers: [], rows: [] };
+  }
+
+  // Let's assume the first line is the header for now
+  const headers = lines[0].split('\t');
+  const rows = lines.slice(1).map((line) => line.split('\t'));
+  
+  console.log('Parsed headers:', headers);
+  console.log(`Parsed ${rows.length} rows.`);
+
+  return { headers, rows };
 };
 
 router.use(authenticate);
@@ -100,12 +131,21 @@ router.post(
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ message: 'Please upload a CSV or Excel file' });
+        return res.status(400).json({ message: 'Please upload a file' });
       }
 
       const title = req.body.title?.trim() || req.file.originalname;
       const tab = req.body.tab?.trim() || 'General';
-      const { headers, headerStyles, rows, rowStyles } = parseWorkbookBuffer(req.file.buffer);
+
+      let headers, headerStyles, rows, rowStyles;
+      const isWord = req.file.mimetype.startsWith('application/msword') || req.file.mimetype.includes('wordprocessingml');
+
+      if (isWord) {
+        ({ headers, rows } = await parseWordDocument(req.file.buffer));
+      } else {
+        ({ headers, headerStyles, rows, rowStyles } = parseWorkbookBuffer(req.file.buffer));
+      }
+
       const keywords = buildSheetKeywords(title, tab, headers, rows);
 
       const sheet = await Sheet.create({
