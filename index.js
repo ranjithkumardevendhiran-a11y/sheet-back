@@ -1,11 +1,11 @@
-import dotenv from 'dotenv';
+﻿import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 import User from './models/User.js';
-import authRoutes from './routes/auth.js';
+import authRoutes from './routes/auth.js';`nimport sheetRoutes from './routes/sheets.js';`nimport updateRoutes from './routes/updates.js';
 import sheetRoutes from './routes/sheets.js';
 
 dotenv.config();
