@@ -5,8 +5,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 import User from './models/User.js';
-import authRoutes from './routes/auth.js';`nimport sheetRoutes from './routes/sheets.js';`nimport updateRoutes from './routes/updates.js';
+import authRoutes from './routes/auth.js';
 import sheetRoutes from './routes/sheets.js';
+import updateRoutes from './routes/updates.js';
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/sheets', sheetRoutes);
+app.use('/api/updates', updateRoutes);
 
 if (process.env.SERVE_CLIENT === 'true') {
   app.get('*', (req, res) => {
