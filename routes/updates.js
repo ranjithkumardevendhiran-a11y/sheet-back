@@ -4,6 +4,17 @@ import Update from '../models/Update.js';
 
 const router = express.Router();
 
+router.get('/', authenticate, async (_req, res) => {
+  try {
+    const updates = await Update.find()
+      .sort({ createdAt: -1 })
+      .populate('createdBy', 'name email');
+    res.json({ updates });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch notifications' });
+  }
+});
+
 router.get('/latest', authenticate, async (_req, res) => {
   try {
     const latestUpdate = await Update.findOne()
